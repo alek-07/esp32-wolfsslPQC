@@ -8,7 +8,6 @@
     "files.associations": {
         "esp_log.h": "c"
     },
-    "idf.portWin": "COM5",
+    "idf.portWin": "COM6",
     "idf.flashType": "UART",
-    "C_Cpp.dimInactiveRegions": false
 }
