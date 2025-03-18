@@ -9,5 +9,6 @@
         "esp_log.h": "c"
     },
     "idf.portWin": "COM5",
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "C_Cpp.dimInactiveRegions": false
 }
