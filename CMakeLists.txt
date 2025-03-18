@@ -18,7 +18,7 @@ endif()
 # The wolfSSL CMake file should be able to find the source code.
 # Otherwise, assign an environment variable or set it here:
 #
-# set(WOLFSSL_ROOT "~/workspace/wolfssl-other-source")
+set(WOLFSSL_ROOT "C:\\wolfssl")
 #
 # Optional WOLFSSL_CMAKE_SYSTEM_NAME detection to find
 # USE_MY_PRIVATE_CONFIG path for my_private_config.h
@@ -145,5 +145,5 @@ endif()
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-project(wolfssl_template)
+project(esp-pqc)
 message(STATUS "end project")
