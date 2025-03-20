@@ -10,7 +10,7 @@
             "request": "launch",
             "cwd": "${workspaceFolder}/build",
             "program": "${workspaceRoot}/build/esp-pqc.elf",
-            "miDebuggerPath": "D:/Users/L03509110/.espressif/tools/xtensa-esp-elf-gdb/14.2_20240403/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb.exe",
+            "miDebuggerPath": "C:/Espressif/tools/xtensa-esp-elf-gdb/14.2_20240403/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb.exe",
   //            "miDebuggerPath": "C:/Users/fidel/.espressif/tools/xtensa-esp-elf-gdb/14.2_20240403/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb.exe",
             "setupCommands": [
                 {   "text": "target remote 127.0.0.1:3333"},

@@ -36,10 +36,10 @@
 #include "main.h"
 
 
-#define WIFI_SSID      "myhotspot"
-#define WIFI_PASSWORD  "01207567"
-#define SERVER_IP    "192.168.8.5"
-#define SERVER_PORT    1111
+#define WIFI_SSID      "MyPublicWiFi"
+#define WIFI_PASSWORD  "12345678"
+#define SERVER_IP    "192.168.137.213"
+#define SERVER_PORT    11111
 
 static const char *TAG = "ESP-PQC";
 
@@ -114,7 +114,7 @@ void wolfssl_client(void *pvParameters) {
     struct sockaddr_in server_addr;
 
     wolfSSL_Init();
-    ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()); // Use TLS 1.3
+    ctx = wolfSSL_CTX_new(wolfSSLv23_client_method()); // Use TLS 1.3
     if (!ctx) {
         ESP_LOGE(TAG, "Failed to create WolfSSL context");
         vTaskDelete(NULL);
@@ -137,6 +137,8 @@ void wolfssl_client(void *pvParameters) {
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
+    
+
     inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
 
     if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) {
