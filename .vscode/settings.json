@@ -9,6 +9,6 @@
         "esp_log.h": "c",
         "nvs_flash.h": "c"
     },
-    "idf.portWin": "COM6",
+    "idf.portWin": "COM3",
     "idf.flashType": "UART",
 }

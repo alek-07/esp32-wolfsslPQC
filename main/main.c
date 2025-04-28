@@ -36,13 +36,12 @@
 #include "main.h"
 
 
-#define WIFI_SSID      "MyPublicWiFi"
-#define WIFI_PASSWORD  "12345678"
-#define SERVER_IP    "192.168.137.213"
-#define SERVER_PORT    11111
+#define WIFI_SSID      "WiFIDPGS38"
+#define WIFI_PASSWORD  "s8kNpGN9Pr"
+#define SERVER_IP    "192.168.8.5"
+#define SERVER_PORT    1111
 
 static const char *TAG = "ESP-PQC";
-int ret_i; /* interim return values */
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -97,7 +96,7 @@ void wolfssl_client(void *pvParameters) {
     
     // Wait until Wi-Fi is connected
     while (esp_wifi_connect() != ESP_OK) {
-        vTaskDelay(pdMS_TO_TICKS(5000)); // Wait 1 second before retrying
+        vTaskDelay(pdMS_TO_TICKS(5000)); // Wait 5 second before retrying
     }
 
     ESP_LOGI(TAG, "Ready to try TLS PQC handshake");
@@ -109,23 +108,19 @@ void wolfssl_client(void *pvParameters) {
         ESP_LOGI(TAG, "--------------------------------------------------------");
     ESP_LOGI(TAG, "Starting WolfSSL client...");
 
-    WOLFSSL_METHOD* method;
     WOLFSSL_CTX *ctx;
     WOLFSSL *ssl;
     int sock;
     struct sockaddr_in server_addr;
 
-    method = wolfTLSv1_3_client_method(); /* use TLS v1.2 */
-
     wolfSSL_Init();
-    ctx = wolfSSL_CTX_new(method); 
+    ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()); // Use TLS 1.3
+
+
     if (!ctx) {
         ESP_LOGE(TAG, "Failed to create WolfSSL context");
         vTaskDelete(NULL);
     }
-
-    ESP_LOGW(TAG, "doPeerCheck == 0");
-    wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_NONE, 0);
 
     ssl = wolfSSL_new(ctx);
     if (!ssl) {
@@ -133,8 +128,6 @@ void wolfssl_client(void *pvParameters) {
         wolfSSL_CTX_free(ctx);
         vTaskDelete(NULL);
     }
-
-   
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -146,8 +139,6 @@ void wolfssl_client(void *pvParameters) {
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
-    
-
     inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
 
     if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) {
@@ -158,13 +149,8 @@ void wolfssl_client(void *pvParameters) {
         vTaskDelete(NULL);
     }
 
-    ret_i = wolfSSL_set_fd(ssl, sock) ;
-    if (ret_i == WOLFSSL_SUCCESS) {
-        ESP_LOGI(TAG, "wolfSSL_set_fd success");
-    }
-    else {
-        ESP_LOGE(TAG, "ERROR: failed wolfSSL_set_fd. Error: %d\n", ret_i);
-    }
+    wolfSSL_set_fd(ssl, sock);
+
 
 
     if (wolfSSL_connect(ssl) != WOLFSSL_SUCCESS) {
@@ -176,9 +162,8 @@ void wolfssl_client(void *pvParameters) {
     }
 
     ESP_LOGI(TAG, "Connected to server using WolfSSL TLS 1.3");
-    
-    
     char request[] = "GET / HTTP/1.1\r\nHost: " SERVER_IP "\r\nConnection: close\r\n\r\n";
+    
     wolfSSL_write(ssl, request, sizeof(request));
 
     char buffer[512];
@@ -195,6 +180,9 @@ void wolfssl_client(void *pvParameters) {
     vTaskDelete(NULL);
 
 }
+
+
+
 void app_main(void) {
     ESP_LOGI(TAG, "Starting Wi-Fi...");
     xTaskCreate(&wolfssl_client, "wolfssl_client", 8192, NULL, 5, NULL);
