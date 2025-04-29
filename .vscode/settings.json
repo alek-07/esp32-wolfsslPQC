@@ -3,11 +3,13 @@
         "IDF_TARGET": "esp32s3"
     },
     "idf.openOcdConfigs": [
-        "board/esp32s3-builtin.cfg"
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32.cfg"
     ],
     "files.associations": {
         "esp_log.h": "c",
-        "nvs_flash.h": "c"
+        "nvs_flash.h": "c",
+        "embedded_cert_file.h": "c"
     },
     "idf.portWin": "COM3",
     "idf.flashType": "UART",

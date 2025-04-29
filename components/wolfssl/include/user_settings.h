@@ -84,6 +84,11 @@
 #undef  WOLFSSL_ESPIDF
 #define WOLFSSL_ESPIDF
 
+#define DEBUG_WOLFSSH
+#define WOLFSSL_FUNC_TIME
+#define WOLFSSL_FUNC_TIME_LOG 
+
+
 /* Test various user_settings between applications by selecting example apps
  * in `idf.py menuconfig` for Example wolfSSL Configuration settings: */
 
@@ -303,7 +308,10 @@
 
     /* optional debug */
     /* #undef  DEBUG_WOLFSSH */
-    /* #define DEBUG_WOLFSSH */
+    #define DEBUG_WOLFSSH
+    #define WOLFSSL_FUNC_TIME
+    #define WOLFSSL_FUNC_TIME_LOG 
+
 
     #undef  WOLFSSL_KEY_GEN
     #define WOLFSSL_KEY_GEN

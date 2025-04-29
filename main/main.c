@@ -35,10 +35,15 @@
 /* project */
 #include "main.h"
 
+#include "embedded_CERT_FILE.h"
+#include "embedded_CA_FILE.h"
+#include "embedded_KEY_FILE.h"
+
+
 
 #define WIFI_SSID      "WiFIDPGS38"
 #define WIFI_PASSWORD  "s8kNpGN9Pr"
-#define SERVER_IP    "192.168.8.5"
+#define SERVER_IP    "192.168.8.7"
 #define SERVER_PORT    1111
 
 static const char *TAG = "ESP-PQC";
@@ -92,6 +97,8 @@ void wifi_init(void) {
 
 void wolfssl_client(void *pvParameters) {
 
+    int ret = WOLFSSL_SUCCESS; /* assume success until proven wrong */
+
     ESP_LOGI(TAG, "Waiting for Wi-Fi connection...");
     
     // Wait until Wi-Fi is connected
@@ -99,6 +106,8 @@ void wolfssl_client(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(5000)); // Wait 5 second before retrying
     }
 
+    printf("Hello world!\n");
+    
     ESP_LOGI(TAG, "Ready to try TLS PQC handshake");
         ESP_LOGI(TAG, "---------------- wolfSSL TLS Client PQC ----------------");
         ESP_LOGI(TAG, "--------------------------------------------------------");
@@ -110,10 +119,15 @@ void wolfssl_client(void *pvParameters) {
 
     WOLFSSL_CTX *ctx;
     WOLFSSL *ssl;
+  
+
+    wolfSSL_Debugging_ON();
+
     int sock;
     struct sockaddr_in server_addr;
 
     wolfSSL_Init();
+    
     ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()); // Use TLS 1.3
 
 
@@ -121,6 +135,191 @@ void wolfssl_client(void *pvParameters) {
         ESP_LOGE(TAG, "Failed to create WolfSSL context");
         vTaskDelete(NULL);
     }
+
+        /*
+        ***************************************************************************
+        *  load CERT_FILE
+        *
+        *
+        *  WOLFSSL_API int wolfSSL_use_certificate_buffer (WOLFSSL * ,
+        *                                                  const unsigned char * ,
+        *                                                  long,
+        *                                                  int
+        *                                                  )
+        *
+        *  The wolfSSL_use_certificate_buffer() function loads a certificate buffer
+        *  into the WOLFSSL object. It behaves like the non-buffered version, only
+        *  differing in its ability to be called with a buffer as input instead of
+        *  a file. The buffer is provided by the in argument of size sz.
+        *
+        *  format specifies the format type of the buffer; SSL_FILETYPE_ASN1 or
+        *  SSL_FILETYPE_PEM. Please see the examples for proper usage.
+        *
+        *  Returns
+        *    SSL_SUCCESS      upon success.
+        *    SSL_BAD_FILETYPE will be returned if the file is the wrong format.
+        *    SSL_BAD_FILE     will be returned if the file doesn’t exist, can’t be read, or is corrupted.
+        *    MEMORY_E         will be returned if an out of memory condition occurs.
+        *    ASN_INPUT_E      will be returned if Base16 decoding fails on the file.
+        *
+        *  Parameters
+        *    ssl    pointer to the SSL session, created with wolfSSL_new().
+        *    in     buffer containing certificate to load.
+        *    sz     size of the certificate located in buffer.
+        *    format format of the certificate to be loaded. Possible values are SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM.
+        *
+        *
+        *  Pay attention to expiration dates and the current date setting
+        *
+        *  see https://www.wolfssl.com/doxygen/group__CertsKeys.html#gaf4e8d912f3fe2c37731863e1cad5c97e
+        ***************************************************************************
+        */
+    if (ret == WOLFSSL_SUCCESS) {
+        ESP_LOGI(TAG, "Loading cert");
+        ret = wolfSSL_CTX_use_certificate_buffer(ctx,
+            CERT_FILE,
+            sizeof_CERT_FILE(),
+            WOLFSSL_FILETYPE_PEM);
+
+        if (ret == WOLFSSL_SUCCESS) {
+            ESP_LOGI(TAG, "wolfSSL_CTX_use_certificate_buffer successful\n");
+        }
+        else {
+            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_certificate_buffer failed\n");
+        }
+    }
+    else {
+        /* a prior error occurred */
+        ESP_LOGE(TAG, "skipping wolfSSL_CTX_use_certificate_buffer\n");
+    }
+
+
+    /*
+    ***************************************************************************
+    *  Load client private key into WOLFSSL_CTX
+    *
+    *  wolfSSL_CTX_use_PrivateKey_buffer()
+    *
+    *  WOLFSSL_API int wolfSSL_CTX_use_PrivateKey_buffer(WOLFSSL_CTX *,
+    *                                                    const unsigned char *,
+    *                                                    long,
+    *                                                    int
+    *                                                   )
+    *
+    *  This function loads a private key buffer into the SSL Context.
+    *  It behaves like the non-buffered version, only differing in its
+    *  ability to be called with a buffer as input instead of a file.
+    *
+    *  The buffer is provided by the in argument of size sz. format
+    *  specifies the format type of the buffer;
+    *  SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM.
+    *
+    *  Please see the examples for proper usage.
+    *
+    *  Returns
+    *    SSL_SUCCESS upon success
+    *    SSL_BAD_FILETYPE will be returned if the file is the wrong format.
+    *    SSL_BAD_FILE will be returned if the file doesn’t exist, can’t be read, or is corrupted.
+    *    MEMORY_E will be returned if an out of memory condition occurs.
+    *    ASN_INPUT_E will be returned if Base16 decoding fails on the file.
+    *    NO_PASSWORD will be returned if the key file is encrypted but no password is provided.
+    *
+    *  Parameters
+    *    ctx      pointer to the SSL context, created with wolfSSL_CTX_new().
+    *             inthe input buffer containing the private key to be loaded.
+    *
+    *    sz          the size of the input buffer.
+    *
+    *    format  the format of the private key located in the input buffer(in).
+    *            Possible values are SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM.
+    *
+    *  see: https://www.wolfssl.com/doxygen/group__CertsKeys.html#ga71850887b87138b7c2d794bf6b1eafab
+    ***************************************************************************
+    */
+    if (ret == WOLFSSL_SUCCESS) {
+        ret = wolfSSL_CTX_use_PrivateKey_buffer(ctx,
+            KEY_FILE,
+            sizeof_KEY_FILE(),
+            WOLFSSL_FILETYPE_PEM);
+        if (ret == WOLFSSL_SUCCESS) {
+            ESP_LOGI(TAG, "wolfSSL_CTX_use_PrivateKey_buffer successful\n");
+        }
+        else {
+            /* TODO fetch and print expiration date since it is a common fail */
+            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_PrivateKey_buffer failed\n");
+        }
+    }
+    else {
+        /* a prior error occurred */
+        ESP_LOGE(TAG, "Skipping wolfSSL_CTX_use_PrivateKey_buffer\n");
+    }
+
+
+    /*
+    ***************************************************************************
+    *  Load CA certificate into WOLFSSL_CTX
+    *
+    *  wolfSSL_CTX_load_verify_buffer()
+    *  WOLFSSL_API int wolfSSL_CTX_load_verify_buffer(WOLFSSL_CTX *,
+    *                                                 const unsigned char *,
+    *                                                 long,
+    *                                                 int
+    *                                                )
+    *
+    *  This function loads a CA certificate buffer into the WOLFSSL Context.
+    *  It behaves like the non-buffered version, only differing in its ability
+    *  to be called with a buffer as input instead of a file. The buffer is
+    *  provided by the in argument of size sz. format specifies the format type
+    *  of the buffer; SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM. More than one
+    *  CA certificate may be loaded per buffer as long as the format is in PEM.
+    *
+    *  Please see the examples for proper usage.
+    *
+    *  Returns
+    *
+    *    SSL_SUCCESS upon success
+    *    SSL_BAD_FILETYPE will be returned if the file is the wrong format.
+    *    SSL_BAD_FILE will be returned if the file doesn’t exist, can’t be read, or is corrupted.
+    *    MEMORY_E will be returned if an out of memory condition occurs.
+    *    ASN_INPUT_E will be returned if Base16 decoding fails on the file.
+    *    BUFFER_E will be returned if a chain buffer is bigger than the receiving buffer.
+    *
+    *  Parameters
+    *
+    *    ctx    pointer to the SSL context, created with wolfSSL_CTX_new().
+    *    in    pointer to the CA certificate buffer.
+    *    sz    size of the input CA certificate buffer, in.
+    *    format    format of the buffer certificate, either SSL_FILETYPE_ASN1 or SSL_FILETYPE_PEM.
+    *
+    * see https://www.wolfssl.com/doxygen/group__CertsKeys.html#gaa37539cce3388c628ac4672cf5606785
+    ***************************************************************************
+    */
+   
+    if (ret == WOLFSSL_SUCCESS) {
+        int err;
+        char err_buf[80];
+
+        ret = wolfSSL_CTX_load_verify_buffer(ctx, 
+                                            CA_FILE, 
+                                            sizeof_CA_FILE(), 
+                                            WOLFSSL_FILETYPE_PEM);
+        if (ret == WOLFSSL_SUCCESS) {
+            ESP_LOGI(TAG, "wolfSSL_CTX_load_verify_buffer successful\n");
+        }
+        else {
+            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
+            err = wolfSSL_get_error(NULL, ret); // NULL because ctx not linked to a session yet
+            wolfSSL_ERR_error_string(err, err_buf);
+            ESP_LOGE(TAG, "wolfSSL error: %s", err_buf);
+        }
+    }
+    else {
+         // a prior error occurred 
+        ESP_LOGE(TAG, "skipping wolfSSL_CTX_load_verify_buffer\n");
+    } 
+    
+    
+
 
     ssl = wolfSSL_new(ctx);
     if (!ssl) {
