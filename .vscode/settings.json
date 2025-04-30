@@ -1,6 +1,6 @@
 {
     "idf.customExtraVars": {
-        "IDF_TARGET": "esp32s3"
+        "IDF_TARGET": "esp32"
     },
     "idf.openOcdConfigs": [
         "interface/ftdi/esp32_devkitj_v1.cfg",
@@ -11,6 +11,6 @@
         "nvs_flash.h": "c",
         "embedded_cert_file.h": "c"
     },
-    "idf.portWin": "COM3",
+    "idf.portWin": "COM8",
     "idf.flashType": "UART",
 }

@@ -41,9 +41,13 @@
 
 
 
-#define WIFI_SSID      "WiFIDPGS38"
-#define WIFI_PASSWORD  "s8kNpGN9Pr"
-#define SERVER_IP    "192.168.8.7"
+// #define WIFI_SSID      "WiFIDPGS38"
+// #define WIFI_PASSWORD  "s8kNpGN9Pr"
+// #define SERVER_IP    "192.168.8.7"
+#define WIFI_SSID      "MyPublicWiFi"
+#define WIFI_PASSWORD  "12345678"
+#define SERVER_IP    "192.168.137.42"
+
 #define SERVER_PORT    1111
 
 static const char *TAG = "ESP-PQC";
@@ -294,6 +298,8 @@ void wolfssl_client(void *pvParameters) {
     * see https://www.wolfssl.com/doxygen/group__CertsKeys.html#gaa37539cce3388c628ac4672cf5606785
     ***************************************************************************
     */
+
+    ssl = wolfSSL_new(ctx);
    
     if (ret == WOLFSSL_SUCCESS) {
         int err;
@@ -308,9 +314,9 @@ void wolfssl_client(void *pvParameters) {
         }
         else {
             ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
-            err = wolfSSL_get_error(NULL, ret); // NULL because ctx not linked to a session yet
-            wolfSSL_ERR_error_string(err, err_buf);
-            ESP_LOGE(TAG, "wolfSSL error: %s", err_buf);
+            err = wolfSSL_get_error(ssl, ret); // NULL because ctx not linked to a session yet
+            wolfSSL_ERR_error_string_n(err, err_buf, 80);
+            ESP_LOGI(TAG, "wolfSSL error: %d", err);
         }
     }
     else {
@@ -321,7 +327,7 @@ void wolfssl_client(void *pvParameters) {
     
 
 
-    ssl = wolfSSL_new(ctx);
+   
     if (!ssl) {
         ESP_LOGE(TAG, "Failed to create WolfSSL session");
         wolfSSL_CTX_free(ctx);
