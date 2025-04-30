@@ -89,8 +89,11 @@
 #define WOLFSSL_FUNC_TIME
 #define WOLFSSL_FUNC_TIME_LOG 
 
-#define CONFIG_WOLFSSL_ENABLE_KYBER
-//#define HAVE_DILITHIUM 
+#define WOLFSSL_EXPERIMENTAL_SETTINGS
+#define WOLFSSL_HAVE_KYBER
+#define WOLFSSL_SHA3
+#define WOLFSSL_SHAKE128
+#define WOLFSSL_ENABLE_DILITHIUM
 
 
 /* Test various user_settings between applications by selecting example apps

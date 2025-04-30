@@ -327,12 +327,7 @@ void wolfssl_client(void *pvParameters) {
     ***************************************************************************
     */
 
-    ssl = wolfSSL_new(ctx);
-   
     if (ret == WOLFSSL_SUCCESS) {
-        int err;
-        char err_buf[80];
-
         ret = wolfSSL_CTX_load_verify_buffer(ctx, 
                                             CA_FILE, 
                                             sizeof_CA_FILE(), 
@@ -342,9 +337,6 @@ void wolfssl_client(void *pvParameters) {
         }
         else {
             ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
-            err = wolfSSL_get_error(ssl, ret); // NULL because ctx not linked to a session yet
-            wolfSSL_ERR_error_string_n(err, err_buf, 80);
-            ESP_LOGI(TAG, "wolfSSL error: %d", err);
         }
     }
     else {
@@ -353,7 +345,13 @@ void wolfssl_client(void *pvParameters) {
     } 
     
     
+    ssl = wolfSSL_new(ctx);
 
+    ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P521_KYBER_LEVEL5);
+    if (ret < 0) {
+        ESP_LOGE(TAG, "ERROR: failed to set the requested group to WOLFSSL_P521_ML_KEM_1024.\n");
+        
+    }
 
    
     if (!ssl) {
