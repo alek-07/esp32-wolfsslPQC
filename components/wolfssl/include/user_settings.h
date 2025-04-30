@@ -84,9 +84,13 @@
 #undef  WOLFSSL_ESPIDF
 #define WOLFSSL_ESPIDF
 
+// My defines for compilation debug and PQC
 #define DEBUG_WOLFSSH
 #define WOLFSSL_FUNC_TIME
 #define WOLFSSL_FUNC_TIME_LOG 
+
+#define WOLFSSL_HAVE_KYBER
+#define HAVE_DILITHIUM 
 
 
 /* Test various user_settings between applications by selecting example apps

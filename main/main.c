@@ -31,6 +31,7 @@
     CFLAGS +=-DWOLFSSL_USER_SETTINGS"
 #endif
 
+const char * TIME_ZONE = "PST-8";
 
 /* project */
 #include "main.h"
@@ -39,14 +40,14 @@
 #include "embedded_CA_FILE.h"
 #include "embedded_KEY_FILE.h"
 
-
+#define CUSTSUCCESS 0
 
 // #define WIFI_SSID      "WiFIDPGS38"
 // #define WIFI_PASSWORD  "s8kNpGN9Pr"
 // #define SERVER_IP    "192.168.8.7"
 #define WIFI_SSID      "MyPublicWiFi"
 #define WIFI_PASSWORD  "12345678"
-#define SERVER_IP    "192.168.137.42"
+#define SERVER_IP    "192.168.137.79"
 
 #define SERVER_PORT    1111
 
@@ -65,6 +66,33 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
     }
 }
 
+int set_time() {
+    /* we'll also return a result code of zero */
+    int res = 0;
+
+    /* ideally, we'd like to set time from network,
+    ** but let's set a default time, just in case
+    */
+    struct tm timeinfo;
+    timeinfo.tm_year = 2024 - 1900;
+    timeinfo.tm_mon = 3;
+    timeinfo.tm_mday = 15;
+    timeinfo.tm_hour = 8;
+    timeinfo.tm_min = 03;
+    timeinfo.tm_sec = 10;
+    time_t t;
+    t = mktime(&timeinfo);
+
+    struct timeval now = { .tv_sec = t };
+    settimeofday(&now, NULL);
+
+    /* set timezone */
+    setenv("TZ", TIME_ZONE, 1);
+    tzset();
+
+    return res;
+
+}
 void wifi_init(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
@@ -390,9 +418,12 @@ void wolfssl_client(void *pvParameters) {
 
 void app_main(void) {
     ESP_LOGI(TAG, "Starting Wi-Fi...");
+    
+    if(set_time()==CUSTSUCCESS) {ESP_LOGI(TAG, "Set time done!");}
     xTaskCreate(&wolfssl_client, "wolfssl_client", 8192, NULL, 5, NULL);
     // start wifi connection
     wifi_init();
+    
 
     
 
