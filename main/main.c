@@ -11,8 +11,10 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
-#include "wolfssl/ssl.h"
 #include "lwip/sockets.h"
+
+
+
 
 /* wolfSSL */
 /* Always include wolfcrypt/settings.h before any other wolfSSL file.    */
@@ -36,18 +38,25 @@ const char * TIME_ZONE = "PST-8";
 /* project */
 #include "main.h"
 
+/* wolfSSL */
+//#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
+#include <wolfssl/wolfio.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
+
+
 #include "embedded_CERT_FILE.h"
 #include "embedded_CA_FILE.h"
 #include "embedded_KEY_FILE.h"
 
 #define CUSTSUCCESS 0
 
-// #define WIFI_SSID      "WiFIDPGS38"
-// #define WIFI_PASSWORD  "s8kNpGN9Pr"
-// #define SERVER_IP    "192.168.8.7"
-#define WIFI_SSID      "MyPublicWiFi"
-#define WIFI_PASSWORD  "12345678"
-#define SERVER_IP    "192.168.137.79"
+#define WIFI_SSID      "WiFIDPGS38"
+#define WIFI_PASSWORD  "s8kNpGN9Pr"
+#define SERVER_IP    "192.168.8.7"
+// #define WIFI_SSID      "MyPublicWiFi"
+// #define WIFI_PASSWORD  "12345678"
+// #define SERVER_IP    "192.168.137.79"
 
 #define SERVER_PORT    1111
 
@@ -74,7 +83,7 @@ int set_time() {
     ** but let's set a default time, just in case
     */
     struct tm timeinfo;
-    timeinfo.tm_year = 2024 - 1900;
+    timeinfo.tm_year = 2025 - 1900;
     timeinfo.tm_mon = 3;
     timeinfo.tm_mday = 15;
     timeinfo.tm_hour = 8;
@@ -208,7 +217,7 @@ void wolfssl_client(void *pvParameters) {
         */
     if (ret == WOLFSSL_SUCCESS) {
         ESP_LOGI(TAG, "Loading cert");
-        ret = wolfSSL_CTX_use_certificate_buffer(ctx,
+        ret =  wolfSSL_CTX_load_verify_buffer(ctx,
             CERT_FILE,
             sizeof_CERT_FILE(),
             WOLFSSL_FILETYPE_PEM);
@@ -217,7 +226,7 @@ void wolfssl_client(void *pvParameters) {
             ESP_LOGI(TAG, "wolfSSL_CTX_use_certificate_buffer successful\n");
         }
         else {
-            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_certificate_buffer failed\n");
+            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_certificate_buffer failed, err %d \n", ret);
         }
     }
     else {
@@ -344,12 +353,16 @@ void wolfssl_client(void *pvParameters) {
     //     ESP_LOGE(TAG, "skipping wolfSSL_CTX_load_verify_buffer\n");
     // } 
     
-    
-    ssl = wolfSSL_new(ctx);
+    /* Create a WOLFSSL object */
+    if ((ssl = wolfSSL_new(ctx)) == NULL) {
+        ESP_LOGE(TAG, "ERROR: failed to create WOLFSSL object\n");
+        
+    }
+   
 
-    ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P521_KYBER_LEVEL5);
+    ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P256_ML_KEM_512);
     if (ret < 0) {
-        ESP_LOGE(TAG, "ERROR: failed to set the requested group to WOLFSSL_P521_ML_KEM_1024.\n");
+        ESP_LOGE(TAG, "ERROR: failed to set the requested group to WOLFSSL_P521_ML_KEM_1024. ERR %d \n", ret);
         
     }
 

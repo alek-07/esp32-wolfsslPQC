@@ -85,7 +85,7 @@ set(CMAKE_CURRENT_SOURCE_DIR ".")
 # set(COMPONENT_REQUIRES lwip) # we typically don't need lwip directly in wolfssl component
 
 # Optionally set your source to wolfSSL in your project CMakeLists.txt like this:
-# set(WOLFSSL_ROOT "c:/test/my_wolfssl" )
+set(WOLFSSL_ROOT "c:/wolfssl" )
 
 if ( "${WOLFSSL_ROOT}" STREQUAL "")
     set(WOLFSSL_ROOT "$ENV{WOLFSSL_ROOT}" )

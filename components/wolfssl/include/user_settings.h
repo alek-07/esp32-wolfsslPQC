@@ -89,10 +89,17 @@
 #define WOLFSSL_FUNC_TIME
 #define WOLFSSL_FUNC_TIME_LOG 
 
-#define CONFIG_WOLFSSL_ENABLE_KYBER
+#define WOLFSSL_EXPERIMENTAL_SETTINGS
+#define WOLFSSL_HAVE_MLKEM
+#define WOLFSSL_WC_MLKEM
+#define HAVE_DILITHIUM
+#define WOLFSSL_WC_DILITHIUM
 #define WOLFSSL_SHAKE128
 #define WOLFSSL_SHAKE256
-#define WOLFSSL_ENABLE_DILITHIUM
+#define WOLFSSL_DUAL_ALG_CERTS
+#define WOLFSSL_SHA3
+
+
 
 
 /* Test various user_settings between applications by selecting example apps
@@ -1110,3 +1117,9 @@ Turn on timer debugging (used when CPU cycles not available)
  *  #define HAVE_AES_ECB
  *  #define HAVE_AES_DIRECT
  */
+
+// #undef WOLFSSL_NO_SHAKE256
+// #undef WOLFSSL_NO_SHAKE128
+// #undef WOLFSSL_WC_KYBER
+// #undef WOLFSSL_HAVE_KYBER
+// #undef WOLFSSL_NO_ML_KEM

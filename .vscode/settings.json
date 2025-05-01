@@ -11,6 +11,6 @@
         "nvs_flash.h": "c",
         "embedded_cert_file.h": "c"
     },
-    "idf.portWin": "COM8",
+    "idf.portWin": "COM3",
     "idf.flashType": "UART",
 }
