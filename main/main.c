@@ -31,7 +31,7 @@
     /* wolfSSL user settings in ./components/wolfssl/include/user_settings.h */
     #error "Missing WOLFSSL_USER_SETTINGS in CMakeLists or Makefile:\
     CFLAGS +=-DWOLFSSL_USER_SETTINGS"
-#endif
+#endif 
 
 const char * TIME_ZONE = "PST-8";
 
