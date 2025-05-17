@@ -277,23 +277,23 @@ void wolfssl_client(void *pvParameters) {
     *  see: https://www.wolfssl.com/doxygen/group__CertsKeys.html#ga71850887b87138b7c2d794bf6b1eafab
     ***************************************************************************
     */
-    // if (ret == WOLFSSL_SUCCESS) {
-    //     ret = wolfSSL_CTX_use_PrivateKey_buffer(ctx,
-    //         KEY_FILE,
-    //         sizeof_KEY_FILE(),
-    //         WOLFSSL_FILETYPE_PEM);
-    //     if (ret == WOLFSSL_SUCCESS) {
-    //         ESP_LOGI(TAG, "wolfSSL_CTX_use_PrivateKey_buffer successful\n");
-    //     }
-    //     else {
-    //         /* TODO fetch and print expiration date since it is a common fail */
-    //         ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_PrivateKey_buffer failed\n");
-    //     }
-    // }
-    // else {
-    //     /* a prior error occurred */
-    //     ESP_LOGE(TAG, "Skipping wolfSSL_CTX_use_PrivateKey_buffer\n");
-    // }
+    if (ret == WOLFSSL_SUCCESS) {
+        ret = wolfSSL_CTX_use_PrivateKey_buffer(ctx,
+            KEY_FILE,
+            sizeof_KEY_FILE(),
+            WOLFSSL_FILETYPE_PEM);
+        if (ret == WOLFSSL_SUCCESS) {
+            ESP_LOGI(TAG, "wolfSSL_CTX_use_PrivateKey_buffer successful\n");
+        }
+        else {
+            /* TODO fetch and print expiration date since it is a common fail */
+            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_PrivateKey_buffer failed\n");
+        }
+    }
+    else {
+        /* a prior error occurred */
+        ESP_LOGE(TAG, "Skipping wolfSSL_CTX_use_PrivateKey_buffer\n");
+    }
 
 
     // /*
@@ -336,22 +336,22 @@ void wolfssl_client(void *pvParameters) {
     // ***************************************************************************
     // */
 
-    // if (ret == WOLFSSL_SUCCESS) {
-    //     ret = wolfSSL_CTX_load_verify_buffer(ctx, 
-    //                                         CA_FILE, 
-    //                                         sizeof_CA_FILE(), 
-    //                                         WOLFSSL_FILETYPE_PEM);
-    //     if (ret == WOLFSSL_SUCCESS) {
-    //         ESP_LOGI(TAG, "wolfSSL_CTX_load_verify_buffer successful\n");
-    //     }
-    //     else {
-    //         ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
-    //     }
-    // }
-    // else {
-    //      // a prior error occurred 
-    //     ESP_LOGE(TAG, "skipping wolfSSL_CTX_load_verify_buffer\n");
-    // } 
+    if (ret == WOLFSSL_SUCCESS) {
+        ret = wolfSSL_CTX_load_verify_buffer(ctx, 
+                                            CA_FILE, 
+                                            sizeof_CA_FILE(), 
+                                            WOLFSSL_FILETYPE_PEM);
+        if (ret == WOLFSSL_SUCCESS) {
+            ESP_LOGI(TAG, "wolfSSL_CTX_load_verify_buffer successful\n");
+        }
+        else {
+            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
+        }
+    }
+    else {
+         // a prior error occurred 
+        ESP_LOGE(TAG, "skipping wolfSSL_CTX_load_verify_buffer\n");
+    } 
     
     /* Create a WOLFSSL object */
     if ((ssl = wolfSSL_new(ctx)) == NULL) {
@@ -399,6 +399,7 @@ void wolfssl_client(void *pvParameters) {
 
     if (wolfSSL_connect(ssl) != WOLFSSL_SUCCESS) {
         ESP_LOGE(TAG, "TLS 1.3 handshake failed");
+        WOLFSSL_TIME(1);
         close(sock);
         wolfSSL_free(ssl);
         wolfSSL_CTX_free(ctx);
@@ -431,7 +432,7 @@ void app_main(void) {
     ESP_LOGI(TAG, "Starting Wi-Fi...");
     
     if(set_time()==CUSTSUCCESS) {ESP_LOGI(TAG, "Set time done!");}
-    xTaskCreate(&wolfssl_client, "wolfssl_client", 8192, NULL, 5, NULL);
+    xTaskCreate(&wolfssl_client, "wolfssl_client", 12288, NULL, 5, NULL);
     // start wifi connection
     wifi_init();
     
