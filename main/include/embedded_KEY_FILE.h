@@ -53,8 +53,8 @@ const unsigned char * KEY_FILE = ""
 
 long sizeof_KEY_FILE() {
     unsigned char * p;
-    p = strchr(CERT_FILE, 0);
-    return p - CERT_FILE + 1;
+    p = strchr(KEY_FILE, 0);
+    return p - KEY_FILE + 1;
 }
 ;
 #pragma GCC diagnostic pop

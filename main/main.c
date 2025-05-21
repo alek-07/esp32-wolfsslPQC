@@ -45,8 +45,8 @@ const char * TIME_ZONE = "PST-8";
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
 
-#include "embedded_CERT_FILE.h"
-#include "embedded_CA_FILE.h"
+//#include "embedded_CERT_FILE.h"
+//#include "embedded_CA_FILE.h"
 #include "embedded_KEY_FILE.h"
 
 #define CUSTSUCCESS 0
@@ -162,20 +162,24 @@ void wolfssl_client(void *pvParameters) {
     WOLFSSL *ssl;
   
 
-    wolfSSL_Debugging_ON();
+    wolfSSL_Debugging_ON();  // start debugging process
 
     int sock;
     struct sockaddr_in server_addr;
 
     wolfSSL_Init();
     
+
     ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()); // Use TLS 1.3
-
-
     if (!ctx) {
         ESP_LOGE(TAG, "Failed to create WolfSSL context");
         vTaskDelete(NULL);
     }
+
+    /* Do not Require mutual authentication */
+    wolfSSL_CTX_set_verify(ctx,
+        SSL_VERIFY_NONE, NULL);
+
 
         /*
         ***************************************************************************
@@ -215,26 +219,36 @@ void wolfssl_client(void *pvParameters) {
         *  see https://www.wolfssl.com/doxygen/group__CertsKeys.html#gaf4e8d912f3fe2c37731863e1cad5c97e
         ***************************************************************************
         */
-    if (ret == WOLFSSL_SUCCESS) {
-        ESP_LOGI(TAG, "Loading cert");
-        ret =  wolfSSL_CTX_load_verify_buffer(ctx,
-            CERT_FILE,
-            sizeof_CERT_FILE(),
-            WOLFSSL_FILETYPE_PEM);
+    // if (ret == WOLFSSL_SUCCESS) {
+    //     ESP_LOGI(TAG, "Loading cert");
+    //     ret =  wolfSSL_CTX_load_verify_buffer(ctx,
+    //         CERT_FILE,
+    //         sizeof_CERT_FILE(),
+    //         WOLFSSL_FILETYPE_PEM);
 
-        if (ret == WOLFSSL_SUCCESS) {
-            ESP_LOGI(TAG, "wolfSSL_CTX_use_certificate_buffer successful\n");
-        }
-        else {
-            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_certificate_buffer failed, err %d \n", ret);
-        }
-    }
-    else {
-        /* a prior error occurred */
-        ESP_LOGE(TAG, "skipping wolfSSL_CTX_use_certificate_buffer\n");
-    }
+    //     if (ret == WOLFSSL_SUCCESS) {
+    //         ESP_LOGI(TAG, "wolfSSL_CTX_use_certificate_buffer successful\n");
+    //     }
+    //     else {
+    //         ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_certificate_buffer failed, err %d \n", ret);
+    //     }
+    // }
+    // else {
+    //     /* a prior error occurred */
+    //     ESP_LOGE(TAG, "skipping wolfSSL_CTX_use_certificate_buffer\n");
+    // }
 
 
+    /* Set our preference for verification to be for both the native and
+     * alternative chains. Ultimately, its the server's choice. This will be
+     * used in the call to wolfSSL_UseCKS(). */
+    byte cks_order[3] = {
+        WOLFSSL_CKS_SIGSPEC_BOTH,
+        WOLFSSL_CKS_SIGSPEC_ALTERNATIVE,
+        WOLFSSL_CKS_SIGSPEC_NATIVE,
+    };
+
+    
     /*
     ***************************************************************************
     *  Load client private key into WOLFSSL_CTX
@@ -336,22 +350,22 @@ void wolfssl_client(void *pvParameters) {
     // ***************************************************************************
     // */
 
-    if (ret == WOLFSSL_SUCCESS) {
-        ret = wolfSSL_CTX_load_verify_buffer(ctx, 
-                                            CA_FILE, 
-                                            sizeof_CA_FILE(), 
-                                            WOLFSSL_FILETYPE_PEM);
-        if (ret == WOLFSSL_SUCCESS) {
-            ESP_LOGI(TAG, "wolfSSL_CTX_load_verify_buffer successful\n");
-        }
-        else {
-            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
-        }
-    }
-    else {
-         // a prior error occurred 
-        ESP_LOGE(TAG, "skipping wolfSSL_CTX_load_verify_buffer\n");
-    } 
+    // if (ret == WOLFSSL_SUCCESS) {
+    //     ret = wolfSSL_CTX_load_verify_buffer(ctx, 
+    //                                         CA_FILE, 
+    //                                         sizeof_CA_FILE(), 
+    //                                         WOLFSSL_FILETYPE_PEM);
+    //     if (ret == WOLFSSL_SUCCESS) {
+    //         ESP_LOGI(TAG, "wolfSSL_CTX_load_verify_buffer successful\n");
+    //     }
+    //     else {
+    //         ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_load_verify_buffer failed, ret = %d \n", ret);
+    //     }
+    // }
+    // else {
+    //      // a prior error occurred 
+    //     ESP_LOGE(TAG, "skipping wolfSSL_CTX_load_verify_buffer\n");
+    // } 
     
     /* Create a WOLFSSL object */
     if ((ssl = wolfSSL_new(ctx)) == NULL) {
@@ -360,7 +374,7 @@ void wolfssl_client(void *pvParameters) {
     }
    
 
-    ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P256_ML_KEM_512);
+    ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P521_ML_KEM_1024);
     if (ret < 0) {
         ESP_LOGE(TAG, "ERROR: failed to set the requested group to WOLFSSL_P521_ML_KEM_1024. ERR %d \n", ret);
         
@@ -371,6 +385,13 @@ void wolfssl_client(void *pvParameters) {
         ESP_LOGE(TAG, "Failed to create WolfSSL session");
         wolfSSL_CTX_free(ctx);
         vTaskDelete(NULL);
+    }
+
+    /*verification to be for both the native and
+     * alternative chains.*/
+    if (!wolfSSL_UseCKS(ssl, cks_order, sizeof(cks_order))) {
+        wolfSSL_CTX_free(ctx); ctx = NULL;
+        ESP_LOGE(TAG,"unable to set the CKS order.");
     }
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
