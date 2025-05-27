@@ -51,12 +51,12 @@ const char * TIME_ZONE = "PST-8";
 
 #define CUSTSUCCESS 0
 
-#define WIFI_SSID      "WiFIDPGS38"
-#define WIFI_PASSWORD  "s8kNpGN9Pr"
-#define SERVER_IP    "192.168.8.7"
-// #define WIFI_SSID      "MyPublicWiFi"
-// #define WIFI_PASSWORD  "12345678"
-// #define SERVER_IP    "192.168.137.79"
+// #define WIFI_SSID      "WiFIDPGS38"
+// #define WIFI_PASSWORD  "s8kNpGN9Pr"
+// #define SERVER_IP    "192.168.8.7"
+#define WIFI_SSID      "MyPublicWiFi"
+#define WIFI_PASSWORD  "12345678"
+#define SERVER_IP    "192.168.137.79"
 
 #define SERVER_PORT    1111
 
