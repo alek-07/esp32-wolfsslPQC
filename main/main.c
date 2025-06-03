@@ -162,13 +162,13 @@ void wolfssl_client(void *pvParameters) {
     WOLFSSL *ssl;
   
 
-    wolfSSL_Debugging_ON();  // start debugging process
-
+    
     int sock;
     struct sockaddr_in server_addr;
 
     wolfSSL_Init();
     
+    wolfSSL_Debugging_ON();  // start debugging process
 
     ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()); // Use TLS 1.3
     if (!ctx) {
