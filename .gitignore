@@ -1,3 +1,7 @@
 build/
 .vscode/launch.json
 .vscode/c_cpp_properties.json
+
+!bootloader.bin
+!esp-pqc.bin
+!partition-table.bin
