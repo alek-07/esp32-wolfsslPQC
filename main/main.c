@@ -51,12 +51,12 @@ const char * TIME_ZONE = "PST-8";
 
 #define CUSTSUCCESS 0
 
-// #define WIFI_SSID      "WiFIDPGS38"
-// #define WIFI_PASSWORD  "s8kNpGN9Pr"
-// #define SERVER_IP    "192.168.8.7"
-#define WIFI_SSID      "MyPublicWiFi"
-#define WIFI_PASSWORD  "12345678"
-#define SERVER_IP    "192.168.137.79"
+#define WIFI_SSID      "WiFIDPGS38"
+#define WIFI_PASSWORD  "s8kNpGN9Pr"
+#define SERVER_IP    "192.168.8.7"
+// #define WIFI_SSID      "MyPublicWiFi"
+// #define WIFI_PASSWORD  "12345678"
+// #define SERVER_IP    "192.168.137.79"
 
 #define SERVER_PORT    1111
 
@@ -291,23 +291,23 @@ void wolfssl_client(void *pvParameters) {
     *  see: https://www.wolfssl.com/doxygen/group__CertsKeys.html#ga71850887b87138b7c2d794bf6b1eafab
     ***************************************************************************
     */
-    if (ret == WOLFSSL_SUCCESS) {
-        ret = wolfSSL_CTX_use_PrivateKey_buffer(ctx,
-            KEY_FILE,
-            sizeof_KEY_FILE(),
-            WOLFSSL_FILETYPE_PEM);
-        if (ret == WOLFSSL_SUCCESS) {
-            ESP_LOGI(TAG, "wolfSSL_CTX_use_PrivateKey_buffer successful\n");
-        }
-        else {
-            /* TODO fetch and print expiration date since it is a common fail */
-            ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_PrivateKey_buffer failed\n");
-        }
-    }
-    else {
-        /* a prior error occurred */
-        ESP_LOGE(TAG, "Skipping wolfSSL_CTX_use_PrivateKey_buffer\n");
-    }
+    // if (ret == WOLFSSL_SUCCESS) {
+    //     ret = wolfSSL_CTX_use_PrivateKey_buffer(ctx,
+    //         KEY_FILE,
+    //         sizeof_KEY_FILE(),
+    //         WOLFSSL_FILETYPE_PEM);
+    //     if (ret == WOLFSSL_SUCCESS) {
+    //         ESP_LOGI(TAG, "wolfSSL_CTX_use_PrivateKey_buffer successful\n");
+    //     }
+    //     else {
+    //         /* TODO fetch and print expiration date since it is a common fail */
+    //         ESP_LOGE(TAG, "ERROR: wolfSSL_CTX_use_PrivateKey_buffer failed\n");
+    //     }
+    // }
+    // else {
+    //     /* a prior error occurred */
+    //     ESP_LOGE(TAG, "Skipping wolfSSL_CTX_use_PrivateKey_buffer\n");
+    // }
 
 
     // /*
@@ -420,7 +420,6 @@ void wolfssl_client(void *pvParameters) {
 
     if (wolfSSL_connect(ssl) != WOLFSSL_SUCCESS) {
         ESP_LOGE(TAG, "TLS 1.3 handshake failed");
-        WOLFSSL_TIME(1);
         close(sock);
         wolfSSL_free(ssl);
         wolfSSL_CTX_free(ctx);
@@ -428,8 +427,8 @@ void wolfssl_client(void *pvParameters) {
     }
 
     ESP_LOGI(TAG, "Connected to server using WolfSSL TLS 1.3");
-    char request[] = "GET / HTTP/1.1\r\nHost: " SERVER_IP "\r\nConnection: close\r\n\r\n";
-    
+    // char request[] = "GET / HTTP/1.1\r\nHost: " SERVER_IP "\r\nConnection: close\r\n\r\n";
+    char request[] = "shutdown";
     wolfSSL_write(ssl, request, sizeof(request));
 
     char buffer[512];
@@ -439,6 +438,7 @@ void wolfssl_client(void *pvParameters) {
         ESP_LOGI(TAG, "Received: %s", buffer);
     }
 
+    WOLFSSL_TIME(1);
     wolfSSL_shutdown(ssl);
     close(sock);
     wolfSSL_free(ssl);
