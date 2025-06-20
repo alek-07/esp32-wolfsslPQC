@@ -4,8 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/Users/fidel/esp/v5.4/esp-idf/**",
-                "C:/wolfssl/**"
+                "D:/Users/L03509110/esp/v5.4/esp-idf/**",
+                "D:/wolfssl/**"
             ],
             "defines": [
                 "_DEBUG",

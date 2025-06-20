@@ -47,20 +47,21 @@ const char * TIME_ZONE = "PST-8";
 
 //#include "embedded_CERT_FILE.h"
 //#include "embedded_CA_FILE.h"
-#include "embedded_KEY_FILE.h"
+//#include "embedded_KEY_FILE.h"
 
 #define CUSTSUCCESS 0
 
-#define WIFI_SSID      "WiFIDPGS38"
-#define WIFI_PASSWORD  "s8kNpGN9Pr"
-#define SERVER_IP    "192.168.8.7"
-// #define WIFI_SSID      "MyPublicWiFi"
-// #define WIFI_PASSWORD  "12345678"
-// #define SERVER_IP    "192.168.137.79"
+// #define WIFI_SSID      "WiFIDPGS38"
+// #define WIFI_PASSWORD  "s8kNpGN9Pr"
+// #define SERVER_IP    "192.168.8.7"
+#define WIFI_SSID      "MyPublicWiFi"
+#define WIFI_PASSWORD  "12345678"
+#define SERVER_IP    "192.168.137.38"
 
 #define SERVER_PORT    1111
 
 static const char *TAG = "ESP-PQC";
+size_t payload_size = 64; // Define payload size in bytes
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -147,7 +148,6 @@ void wolfssl_client(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(5000)); // Wait 5 second before retrying
     }
 
-    printf("Hello world!\n");
     
     ESP_LOGI(TAG, "Ready to try TLS PQC handshake");
         ESP_LOGI(TAG, "---------------- wolfSSL TLS Client PQC ----------------");
@@ -428,6 +428,24 @@ void wolfssl_client(void *pvParameters) {
 
     ESP_LOGI(TAG, "Connected to server using WolfSSL TLS 1.3");
     // char request[] = "GET / HTTP/1.1\r\nHost: " SERVER_IP "\r\nConnection: close\r\n\r\n";
+
+    // unsigned char* buffer = malloc(payload_size);
+    // if (!buffer) {
+    //    ESP_LOGE(TAG, "malloc failed");
+    //    close(sock);
+    //    wolfSSL_free(ssl);
+    //    wolfSSL_CTX_free(ctx);
+    //    vTaskDelete(NULL);
+    // }
+
+    // // Fill buffer with random bytes
+    // for (size_t i = 0; i < payload_size; ++i) {
+    //     buffer[i] = rand() % 256;
+    // }
+
+    // wolfSSL_write(ssl, buffer, sizeof(buffer));
+    // free(buffer);
+
     char request[] = "shutdown";
     wolfSSL_write(ssl, request, sizeof(request));
 

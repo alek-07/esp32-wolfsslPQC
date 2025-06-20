@@ -1,6 +1,6 @@
 build/
-.vscode/launch.json
-.vscode/c_cpp_properties.json
+.vscode/
+
 
 !bootloader.bin
 !esp-pqc.bin

@@ -9,9 +9,10 @@
     "files.associations": {
         "esp_log.h": "c",
         "nvs_flash.h": "c",
-        "embedded_cert_file.h": "c"
+        "embedded_cert_file.h": "c",
+        "wolfio.h": "c"
     },
-    "idf.portWin": "COM4",
+    "idf.portWin": "COM8",
     "idf.flashType": "UART",
     "idf.port": "/dev/tty.usbmodem58870117611",
     "C_Cpp.default.compilerPath": "",
