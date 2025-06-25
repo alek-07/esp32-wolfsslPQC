@@ -429,33 +429,36 @@ void wolfssl_client(void *pvParameters) {
     ESP_LOGI(TAG, "Connected to server using WolfSSL TLS 1.3");
     // char request[] = "GET / HTTP/1.1\r\nHost: " SERVER_IP "\r\nConnection: close\r\n\r\n";
 
-    // unsigned char* buffer = malloc(payload_size);
-    // if (!buffer) {
-    //    ESP_LOGE(TAG, "malloc failed");
-    //    close(sock);
-    //    wolfSSL_free(ssl);
-    //    wolfSSL_CTX_free(ctx);
-    //    vTaskDelete(NULL);
-    // }
-
-    // // Fill buffer with random bytes
-    // for (size_t i = 0; i < payload_size; ++i) {
-    //     buffer[i] = rand() % 256;
-    // }
-
-    // wolfSSL_write(ssl, buffer, sizeof(buffer));
-    // free(buffer);
-
-    char request[] = "shutdown";
-    wolfSSL_write(ssl, request, sizeof(request));
-
-    char buffer[512];
-    int len = wolfSSL_read(ssl, buffer, sizeof(buffer)-1);
-    if (len > 0) {
-        buffer[len] = '\0';
-        ESP_LOGI(TAG, "Received: %s", buffer);
+    unsigned char* buffer = malloc(payload_size);
+    if (!buffer) {
+       ESP_LOGE(TAG, "malloc failed");
+       close(sock);
+       wolfSSL_free(ssl);
+       wolfSSL_CTX_free(ctx);
+       vTaskDelete(NULL);
     }
 
+    
+    // Fill buffer with random bytes
+    for (size_t i = 0; i < payload_size; ++i) {
+        buffer[i] = rand() % 256;
+    }
+
+    wolfSSL_write(ssl, buffer, payload_size);
+    ESP_LOGI(TAG, "Size of send info: %zu bytes", payload_size);
+   
+
+    // char request[] = "shutdown";
+    // wolfSSL_write(ssl, request, sizeof(request));
+
+    //char buffer[512];
+    int len = wolfSSL_read(ssl, buffer, payload_size-1);
+    if (len > 0) {
+        buffer[len] = '\0';
+        ESP_LOGI(TAG, "Received: %s, Size of receive info: %zu bytes", buffer, len);
+    }
+
+    free(buffer);
     WOLFSSL_TIME(1);
     wolfSSL_shutdown(ssl);
     close(sock);
