@@ -31,7 +31,7 @@
     /* wolfSSL user settings in ./components/wolfssl/include/user_settings.h */
     #error "Missing WOLFSSL_USER_SETTINGS in CMakeLists or Makefile:\
     CFLAGS +=-DWOLFSSL_USER_SETTINGS"
-#endif 
+#endif
 
 const char * TIME_ZONE = "PST-8";
 
@@ -73,7 +73,7 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Connected! IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
-        
+
     }
 }
 
@@ -135,6 +135,7 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
 
@@ -143,7 +144,7 @@ void wolfssl_client(void *pvParameters) {
     int ret = WOLFSSL_SUCCESS; /* assume success until proven wrong */
 
     //ESP_LOGI(TAG, "Waiting for Wi-Fi connection...");
-    
+
     ESP_LOGI(TAG, "Ready to try TLS PQC handshake");
     /*     ESP_LOGI(TAG, "---------------- wolfSSL TLS Client PQC ----------------");
         ESP_LOGI(TAG, "--------------------------------------------------------");
@@ -155,13 +156,13 @@ void wolfssl_client(void *pvParameters) {
 
     WOLFSSL_CTX *ctx;
     WOLFSSL *ssl;
-     
+
     int sock;
     struct sockaddr_in server_addr;
-    
-    
+
+
     wolfSSL_Init();
-    
+
     wolfSSL_Debugging_ON();  // start debugging process
 
     ESP_LOGI("HEAP", "Before SSL init: free heap = %lu", esp_get_free_heap_size());
@@ -184,23 +185,23 @@ void wolfssl_client(void *pvParameters) {
         WOLFSSL_CKS_SIGSPEC_NATIVE,
     };
 
-    
+
     /* Create a WOLFSSL object */
     if ((ssl = wolfSSL_new(ctx)) == NULL) {
         ESP_LOGE(TAG, "ERROR: failed to create WOLFSSL object\n");
         wolfSSL_CTX_free(ctx);
         vTaskDelete(NULL);
-        
+
     }
-   
+
 
     ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P521_ML_KEM_1024);
     if (ret < 0) {
         ESP_LOGE(TAG, "ERROR: failed to set the requested group to WOLFSSL_P521_ML_KEM_1024. ERR %d \n", ret);
-        
+
     }
 
-   
+
     /*verification to be for both the native and
      * alternative chains.*/
     if (!wolfSSL_UseCKS(ssl, cks_order, sizeof(cks_order))) {
@@ -252,7 +253,7 @@ void wolfssl_client(void *pvParameters) {
        vTaskDelete(NULL);
     }
 
-    
+
     // Fill buffer with random bytes
     for (size_t i = 0; i < payload_size; ++i) {
         buffer[i] = rand() % 256;
@@ -260,7 +261,7 @@ void wolfssl_client(void *pvParameters) {
 
     wolfSSL_write(ssl, buffer, payload_size);
     ESP_LOGI(TAG, "Size of send info: %zu bytes", payload_size);
-   
+
 
     // char request[] = "shutdown";
     // wolfSSL_write(ssl, request, sizeof(request));
@@ -286,7 +287,7 @@ void wolfssl_client(void *pvParameters) {
 
 void app_main(void) {
     ESP_LOGI(TAG, "Starting Wi-Fi...");
-    
+
     if(set_time()==CUSTSUCCESS) {ESP_LOGI(TAG, "Set time done!");}
 
      // start wifi connection
@@ -301,27 +302,50 @@ void app_main(void) {
         int *user_id = malloc(sizeof(int));
         *user_id = i;
 
-        if (xTaskCreate(&wolfssl_client, "wolfssl_client", 12288, user_id, 5, NULL) != pdPASS) {
-             printf("Task creation failed for user %d\n", i);
-             free(user_id);
+        const int stack_size = 12288; // same size as your original
+        void *stack_mem = heap_caps_malloc(stack_size, MALLOC_CAP_SPIRAM);
+
+        if (stack_mem == NULL) {
+            ESP_LOGE("APP", "Failed to allocate stack from PSRAM");
+            return;
         }
+
+        TaskHandle_t task_handle;
+        StaticTask_t *task_buffer = heap_caps_malloc(sizeof(StaticTask_t), MALLOC_CAP_INTERNAL);
+        if (task_buffer == NULL) {
+            ESP_LOGE("APP", "Failed to allocate task control block");
+            free(stack_mem);
+            return;
+        }
+
+        xTaskCreateStaticPinnedToCore(
+            &wolfssl_client,
+            "wolfssl_client",
+            stack_size / sizeof(StackType_t),
+            user_id,
+            5,
+            stack_mem,
+            task_buffer,
+            0
+        );
+
     }
 
     ESP_LOGI(TAG, "[Heap] After client threads: %lu bytes", esp_get_free_heap_size());
 
-    
+
 
     //ESP_LOGI(TAG, "[Heap] Before client threads: %lu bytes", esp_get_free_heap_size());
     // for (int i=0; i < con_users; i++){
 
     //     xTaskCreate(&wolfssl_client, "wolfssl_client", 12288, NULL, 5, NULL);
     // }
-    
+
     //ESP_LOGI(TAG, "[Heap] After client threads: %lu bytes", esp_get_free_heap_size());
 
-    
 
 
 
-    
+
+
 }
