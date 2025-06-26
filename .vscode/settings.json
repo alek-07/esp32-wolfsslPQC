@@ -1,19 +1,18 @@
 {
-    "idf.customExtraVars": {
-        "IDF_TARGET": "esp32"
-    },
-    "idf.openOcdConfigs": [
-        "interface/ftdi/esp32_devkitj_v1.cfg",
-        "target/esp32.cfg"
-    ],
-    "files.associations": {
-        "esp_log.h": "c",
-        "nvs_flash.h": "c",
-        "embedded_cert_file.h": "c",
-        "wolfio.h": "c"
-    },
-    "idf.portWin": "COM8",
-    "idf.flashType": "UART",
-    "idf.port": "/dev/tty.usbmodem58870117611",
-    "C_Cpp.default.compilerPath": "",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "files.associations": {
+    "esp_log.h": "c",
+    "nvs_flash.h": "c",
+    "embedded_cert_file.h": "c",
+    "wolfio.h": "c"
+  },
+  "idf.portWin": "COM3",
+  "idf.flashType": "UART",
+  "idf.port": "/dev/tty.usbmodem58870117611",
+  "C_Cpp.default.compilerPath": ""
 }

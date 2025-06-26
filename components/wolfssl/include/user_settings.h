@@ -104,9 +104,12 @@
 #define WOLFSSL_DUAL_ALG_CERTS
 #define WOLFSSL_SHA3
 
+/* #define WOLFSSL_ESP32WROOM32_CRYPT
+#undef  WOLFSSL_HAVE_ECC_ENCRYPT  // optional: if not using ECC encryption
+#define WOLFSSL_NO_HW_ECC  */
 
 /* Turn on messages that are useful to see only in examples. */
-#define WOLFSSL_EXAMPLE_VERBOSITY
+//#define WOLFSSL_EXAMPLE_VERBOSITY
 
 /* Paths can be long, ensure the entire value printed during debug */
 #define WOLFSSL_MAX_ERROR_SZ 500
@@ -256,7 +259,7 @@
 /* Pick a cert buffer size: */
 /* #define USE_CERT_BUFFERS_2048 */
 /* #define USE_CERT_BUFFERS_1024 */
-#define USE_CERT_BUFFERS_2048
+// #define USE_CERT_BUFFERS_2048
 
 /* The Espressif sdkconfig will have chipset info.
 **
@@ -358,7 +361,7 @@
 /* See below for chipset detection from sdkconfig.h */
 
 /* when you want to use SINGLE THREAD. Note Default ESP-IDF is FreeRTOS */
-#define SINGLE_THREADED
+//#define SINGLE_THREADED
 
 /* Small session cache saves a lot of RAM for ClientCache and SessionCache.
  * Memory requirement is about 5KB, otherwise 20K is needed when not specified.
@@ -367,15 +370,15 @@
 #define NO_SESSION_CACHE
 
 /* Small Stack uses more heap. */
-#define WOLFSSL_SMALL_STACK
+//#define WOLFSSL_SMALL_STACK
 
 /* Full debugging turned off, but show malloc failure detail */
 /* #define DEBUG_WOLFSSL */
 #define DEBUG_WOLFSSL_MALLOC
 
 /* See test.c that sets cert buffers; we'll set them here: */
-#define USE_CERT_BUFFERS_256
-#define USE_CERT_BUFFERS_2048
+//#define USE_CERT_BUFFERS_256
+//#define USE_CERT_BUFFERS_2048
 
 /* RSA_LOW_MEM: Half as much memory but twice as slow. */
 #define RSA_LOW_MEM
@@ -442,10 +445,10 @@
 /* #define WOLFSSL_RIPEMD */
 
 /* when you want to use SHA224 */
-#define WOLFSSL_SHA224
+//#define WOLFSSL_SHA224
 
 /* when you want to use SHA384 */
-#define WOLFSSL_SHA384
+//#define WOLFSSL_SHA384
 
 /* Some features not enabled for ESP8266: */
 #if defined(CONFIG_IDF_TARGET_ESP8266) || \
@@ -578,7 +581,7 @@
     defined(WOLFSSL_SP_RISCV32)
 #endif
 
-#define WOLFSSL_SMALL_STACK
+//#define WOLFSSL_SMALL_STACK
 
 
 #define HAVE_VERSION_EXTENDED_INFO
@@ -912,7 +915,7 @@ Turn on timer debugging (used when CPU cycles not available)
 /* #define HASH_SIZE_LIMIT */
 
 /* Optionally turn off HW math checks */
-/* #define NO_HW_MATH_TEST */
+/*#define NO_HW_MATH_TEST */
 
 /* Optionally include alternate HW test library: alt_hw_test.h */
 /* When enabling, the ./components/wolfssl/CMakeLists.txt file
