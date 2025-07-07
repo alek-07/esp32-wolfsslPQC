@@ -9,7 +9,11 @@
     "esp_log.h": "c",
     "nvs_flash.h": "c",
     "embedded_cert_file.h": "c",
-    "wolfio.h": "c"
+    "wolfio.h": "c",
+    "chrono": "c",
+    "sockets.h": "c",
+    "esp_heap_caps.h": "c",
+    "esp_heap_task_info.h": "c"
   },
   "idf.portWin": "COM3",
   "idf.flashType": "UART",
