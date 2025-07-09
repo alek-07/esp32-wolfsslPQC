@@ -29,6 +29,12 @@
 /* The Espressif project config file. See also sdkconfig.defaults */
 #include "sdkconfig.h"
 
+/* Disable HW for this test */
+    #define NO_ESP32_CRYPT
+    #define NO_WOLFSSL_ESP32_CRYPT_HASH
+    #define NO_WOLFSSL_ESP32_CRYPT_AES
+    #define NO_WOLFSSL_ESP32_CRYPT_RSA_PRI
+
 /* This user_settings.h is for Espressif ESP-IDF
  *
  * Standardized wolfSSL Espressif ESP32 + ESP8266 user_settings.h V5.7.0-1
@@ -88,11 +94,11 @@
 /* Test various user_settings between applications by selecting example apps
  * in `idf.py menuconfig` for Example wolfSSL Configuration settings: */
 
- 
+
 // My defines for compilation debug and PQC
 #define DEBUG_WOLFSSH
 #define WOLFSSL_FUNC_TIME
-#define WOLFSSL_FUNC_TIME_LOG 
+#define WOLFSSL_FUNC_TIME_LOG
 
 #define WOLFSSL_EXPERIMENTAL_SETTINGS
 #define WOLFSSL_HAVE_MLKEM
@@ -553,7 +559,7 @@
 /* Adjust wait-timeout count if you see timeout in RSA HW acceleration.
  * Set to very large number and enable WOLFSSL_HW_METRICS to determine max. */
 #ifndef ESP_RSA_TIMEOUT_CNT
-	#define ESP_RSA_TIMEOUT_CNT 0xFF0000
+    #define ESP_RSA_TIMEOUT_CNT 0xFF0000
 #endif
 
 /* hash limit for test.c */
