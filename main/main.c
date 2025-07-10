@@ -65,28 +65,33 @@ const char * TIME_ZONE = "PST-8";
 
 static const char *TAG = "ESP-PQC";
 size_t payload_size = 83; // Define payload size in bytes
-static const int con_users = 50;
+
+/* Do not open more than [CONFIG_LWIP_MAX_SOCKETS] socket connections */
+static const int con_users =  CONFIG_LWIP_MAX_SOCKETS;
+static const int MY_MAX_SOCKET_RETRIES = 10;
+static const int MY_SOCKET_RETRY_DELAY = 50;
 
 static bool connectedIP = false;
 TickType_t DelayTicks = 5000 / portTICK_PERIOD_MS;
 
 
-void *custom_malloc(size_t size){
-
-     return heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-
+#ifndef NO_WOLFSSL_MEMORY
+static void *custom_malloc(size_t size) {
+    void* this_custom_malloc;
+    this_custom_malloc = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    return this_custom_malloc;
 }
 
-void* custom_realloc(void* ptr, size_t size){
-
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+static void* custom_realloc(void* ptr, size_t size) {
+    void* this_custom_realloc;
+    this_custom_realloc = heap_caps_realloc(ptr, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    return this_custom_realloc;
 }
 
-void custom_free(void *ptr){
+static void custom_free(void *ptr) {
     heap_caps_free(ptr);
 }
-
-
+#endif
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -175,9 +180,11 @@ void print_task_mem_stats(int i) {
 }
 
 static int is_any_halted = 0;
-void my_halt(int i) {
+static const char* halt_message = "";
+void my_halt(const char* msg, int i) {
     is_any_halted = 1;
-    ESP_LOGE(TAG, "Halt #%d", i);
+    halt_message = msg;
+    ESP_LOGE(TAG, "Halt #%d; msg = %s", i, msg);
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -187,7 +194,7 @@ void wolfssl_client(void *pvParameters) {
     int ret = WOLFSSL_SUCCESS; /* assume success until proven wrong */
     ESP_LOGI(TAG, "Ready to try TLS PQC handshake");
 
-    int sock = 0; /* the socket that will carry our secure connection */
+    int sock = -1; /* the socket that will carry our secure connection */
     struct sockaddr_in server_addr;
 
     WOLFSSL_CTX *ctx = NULL; /* the wolfSSL context object*/
@@ -196,7 +203,6 @@ void wolfssl_client(void *pvParameters) {
 
 
     wolfSSL_Debugging_ON();  // start debugging process
-
     int param = *((int *)pvParameters);
     ESP_LOGI("HEAP", "Before SSL init: free heap = %lu, for task %u", esp_get_free_heap_size(), param);
     heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
@@ -204,7 +210,7 @@ void wolfssl_client(void *pvParameters) {
     ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()); // Use TLS 1.3
     if (!ctx) {
         ESP_LOGE(TAG, "Failed to create WolfSSL context");
-        my_halt(param);
+        my_halt("Failed to create WolfSSL context", param);
         vTaskDelete(NULL);
     }
 
@@ -227,7 +233,7 @@ void wolfssl_client(void *pvParameters) {
     if ((ssl = wolfSSL_new(ctx)) == NULL) {
         ESP_LOGE(TAG, "ERROR: failed to create WOLFSSL object\n");
         wolfSSL_CTX_free(ctx);
-        my_halt(param);
+        my_halt("failed to create WOLFSSL object", param);
         vTaskDelete(NULL);
     }
 
@@ -236,7 +242,7 @@ void wolfssl_client(void *pvParameters) {
     ret = wolfSSL_UseKeyShare(ssl, WOLFSSL_P521_ML_KEM_1024);
     if (ret < 0) {
         ESP_LOGE(TAG, "ERROR: failed to set the requested group to WOLFSSL_P521_ML_KEM_1024. ERR %d \n", ret);
-        my_halt(param);
+        my_halt("failed wolfSSL_UseKeyShare", param);
     }
 
 
@@ -246,7 +252,7 @@ void wolfssl_client(void *pvParameters) {
         wolfSSL_free(ssl);
         wolfSSL_CTX_free(ctx); ctx = NULL;
         ESP_LOGE(TAG,"unable to set the CKS order.");
-        my_halt(param);
+        my_halt("failed wolfSSL_UseCKS", param);
     }
 
 
@@ -255,13 +261,30 @@ void wolfssl_client(void *pvParameters) {
 
     print_task_mem_stats(param);
     {
-        sock = socket(AF_INET, SOCK_STREAM, 0);
+        int tries = 0;
+        sock = -1; /* we don't yet have a valid socket */
+
+        for (tries = 0; tries < MY_MAX_SOCKET_RETRIES && sock < 0; tries++) {
+            sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0) {
+                vTaskDelay(MY_SOCKET_RETRY_DELAY); // short wait
+            }
+        }
+
         if (sock < 0) {
-            ESP_LOGE(TAG, "Socket creation failed");
+            ESP_LOGE(TAG, "Socket creation failed after %d attempts", tries);
             wolfSSL_free(ssl);
             wolfSSL_CTX_free(ctx);
-            my_halt(param);
+            my_halt("Socket creation failed", param);
             vTaskDelete(NULL);
+        }
+        else {
+            if (tries == 0) {
+                ESP_LOGI(TAG, "Connected on first try!");
+            }
+            else {
+                ESP_LOGW(TAG, "Connected after attempts: %d", tries + 1);
+            }
         }
 
         server_addr.sin_family = AF_INET;
@@ -271,14 +294,14 @@ void wolfssl_client(void *pvParameters) {
         vTaskDelay(DelayTicks ? DelayTicks : 2); /* Minimum delay = 1 tick */
 
         if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0) {
-            ESP_LOGE(TAG, "Failed to connect to server");
+            int err = errno; /* thread safe; thread-local storage per task */
+            ESP_LOGE(TAG, "Failed to connect to server #%d: errno=%d (%s)", param, err, strerror(err));
             close(sock);
             wolfSSL_free(ssl);
             wolfSSL_CTX_free(ctx);
-            my_halt(param);
             vTaskDelete(NULL);
         }
-    }
+    } /* non-wolfSSL heap & stack */
     print_task_mem_stats(param);
 
     wolfSSL_set_fd(ssl, sock);
@@ -286,11 +309,11 @@ void wolfssl_client(void *pvParameters) {
     heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
 
     if (wolfSSL_connect(ssl) != WOLFSSL_SUCCESS) {
-        ESP_LOGE(TAG, "TLS 1.3 handshake failed");
+        ESP_LOGE(TAG, "TLS 1.3 handshake failed #%d", param);
         close(sock);
         wolfSSL_free(ssl);
         wolfSSL_CTX_free(ctx);
-        my_halt(param);
+        my_halt("TLS 1.3 handshake failed", param);
         vTaskDelete(NULL);
     }
 
@@ -303,7 +326,7 @@ void wolfssl_client(void *pvParameters) {
        close(sock);
        wolfSSL_free(ssl);
        wolfSSL_CTX_free(ctx);
-       my_halt(param);
+       my_halt("failed buffer malloc", param);
        vTaskDelete(NULL);
     }
 
@@ -324,7 +347,7 @@ void wolfssl_client(void *pvParameters) {
     int len = wolfSSL_read(ssl, buffer, payload_size);
     if (len > 0) {
         buffer[len] = '\0';
-        ESP_LOGI(TAG, "Received: %s, Size of receive info: %zu bytes", buffer, len);
+        ESP_LOGI(TAG, "Received: %s, Size of receive info: %d bytes", buffer, len);
     }
 
     int ret_i;
@@ -351,12 +374,12 @@ void wolfssl_client(void *pvParameters) {
     wolfSSL_CTX_free(ctx);
     free(pvParameters);
     vTaskDelete(NULL);
-}
+} /* client task */
 
 void failed_print_caps(uint32_t caps) {
     if (caps & MALLOC_CAP_INTERNAL) {
         ESP_LOGE("HOOK", "Failed: [INTERNAL]");
-        my_halt(0);
+        my_halt("Failed internal memory",0);
     }
     if (caps & MALLOC_CAP_SPIRAM)
         ESP_LOGE("HOOK", " [SPIRAM]");
@@ -381,9 +404,18 @@ void app_main(void) {
 
     char taskName[16];
 
+    UBaseType_t system_task_count = uxTaskGetNumberOfTasks();
+    ESP_LOGI(TAG, "Startupo tasks running: %d", system_task_count);
+
     gpio_reset_pin(GPIO_NUM_48);
     gpio_set_direction(GPIO_NUM_48, GPIO_MODE_OUTPUT);
-    wolfSSL_SetAllocators(custom_malloc, custom_free, custom_realloc);
+#if defined(NO_WOLFSSL_MEMORY)
+    ESP_LOGE(TAG, "Cannot use wolfSSL_SetAllocators with NO_WOLFSSL_MEMORY");
+#else
+    wolfSSL_SetAllocators((wolfSSL_Malloc_cb)custom_malloc,
+                          (wolfSSL_Free_cb)custom_free,
+                          (wolfSSL_Realloc_cb)custom_realloc);
+#endif
 
     esp_err_t error = heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
     if (error == ESP_OK) {
@@ -416,8 +448,16 @@ void app_main(void) {
     //heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
     wolfSSL_Init();
 
+    system_task_count = uxTaskGetNumberOfTasks();
+    ESP_LOGI(TAG, "Startupo tasks running before clients: %d", system_task_count);
+
+
     for (int i = 0; i < con_users; i++) {
         if (is_any_halted) {
+            ESP_LOGW(TAG, "------------------------------------");
+            ESP_LOGW(TAG, "-------------- BREAK ---------------");
+            ESP_LOGW(TAG, "-- %s", halt_message);
+            ESP_LOGW(TAG, "------------------------------------");
             break;
         }
 
@@ -467,11 +507,14 @@ void app_main(void) {
 
     //heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
 
-    for (;;)
-        {
-            vTaskDelay(DelayTicks ? DelayTicks : 1); /* Minimum delay = 1 tick */
+    for (;;) {
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        UBaseType_t count = uxTaskGetNumberOfTasks() - system_task_count;
+        if (count > 1) {
+            ESP_LOGI("TASKS", "Total number of tasks: %u", count);
         }
-
-
-
+        else {
+            my_halt("Done!", -1);
+        }
+    }
 }

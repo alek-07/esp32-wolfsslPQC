@@ -29,12 +29,6 @@
 /* The Espressif project config file. See also sdkconfig.defaults */
 #include "sdkconfig.h"
 
-/* Disable HW for this test */
-    #define NO_ESP32_CRYPT
-    #define NO_WOLFSSL_ESP32_CRYPT_HASH
-    #define NO_WOLFSSL_ESP32_CRYPT_AES
-    #define NO_WOLFSSL_ESP32_CRYPT_RSA_PRI
-
 /* This user_settings.h is for Espressif ESP-IDF
  *
  * Standardized wolfSSL Espressif ESP32 + ESP8266 user_settings.h V5.7.0-1
@@ -381,6 +375,9 @@
 /* Full debugging turned off, but show malloc failure detail */
 /* #define DEBUG_WOLFSSL */
 #define DEBUG_WOLFSSL_MALLOC
+
+/* NO_WOLFSSL_MEMORY to disable wolfSSL custom malloc, e.g. no SPRAM */
+/* #define NO_WOLFSSL_MEMORY */
 
 /* See test.c that sets cert buffers; we'll set them here: */
 //#define USE_CERT_BUFFERS_256
@@ -1123,3 +1120,6 @@ Turn on timer debugging (used when CPU cycles not available)
  *  #define HAVE_AES_ECB
  *  #define HAVE_AES_DIRECT
  */
+#if defined(NO_WOLFSSL_MEMORY)
+    // #warning "NO_WOLFSSL_MEMORY is defined"
+#endif
